@@ -17,6 +17,8 @@ export default function ReportPage() {
       router.replace("/invalid");
     } else {
       setToken(t);
+      // Save token to sessionStorage immediately so /invalid can use it on refresh
+      sessionStorage.setItem("apie_token", t);
     }
   }, [searchParams, router]);
 
@@ -36,7 +38,6 @@ export default function ReportPage() {
     <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-gray-900 rounded-2xl p-8 shadow-xl border border-gray-800">
 
-        {/* Header */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
             <span className="text-3xl">🏥</span>
@@ -47,21 +48,18 @@ export default function ReportPage() {
           </p>
         </div>
 
-        {/* Warning */}
         <div className="bg-yellow-900/30 border border-yellow-700/50 rounded-xl p-4 mb-6">
           <p className="text-yellow-400 text-xs text-center">
             ⚠️ This link is accessible only once. Please download your report after viewing.
           </p>
         </div>
 
-        {/* Error */}
         {error && (
           <div className="bg-red-900/30 border border-red-700/50 rounded-xl p-4 mb-6">
             <p className="text-red-400 text-sm text-center">{error}</p>
           </div>
         )}
 
-        {/* Phone Input */}
         <div className="mb-6">
           <label className="text-gray-400 text-sm mb-2 block">
             📱 Phone Number
@@ -89,7 +87,6 @@ export default function ReportPage() {
           )}
         </div>
 
-        {/* Token Preview */}
         {token && (
           <div className="bg-gray-800 rounded-xl p-3 mb-6">
             <p className="text-gray-500 text-xs mb-1">Access Token</p>
@@ -97,7 +94,6 @@ export default function ReportPage() {
           </div>
         )}
 
-        {/* Button */}
         <button
           onClick={handleRequestOTP}
           disabled={loading || !token || phone.length < 10}
@@ -109,17 +105,13 @@ export default function ReportPage() {
               Sending OTP...
             </>
           ) : (
-            <>
-              📱 Send OTP
-            </>
+            <>📱 Send OTP</>
           )}
         </button>
 
-        {/* Footer */}
         <p className="text-gray-600 text-xs text-center mt-6">
           Powered by APIE — Autonomous Patient Insight Engine
         </p>
-
       </div>
     </div>
   );

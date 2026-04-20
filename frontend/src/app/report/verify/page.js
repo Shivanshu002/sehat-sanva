@@ -6,14 +6,20 @@ import { useReport } from "@/context/ReportContext";
 
 export default function VerifyPage() {
   const router = useRouter();
-  const { verifyOTP, loading, error, clearError, hint, otpSent } = useReport();
+  const { verifyOTP, loading, error, clearError, hint, otpSent, token } = useReport();
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const inputRefs = useRef([]);
 
   // Redirect if user lands here directly without OTP
   useEffect(() => {
     if (!otpSent) {
-      router.replace("/invalid");
+      // Pass token in URL so /invalid page can show the OTP phone form
+      const storedToken = sessionStorage.getItem("apie_token");
+      if (storedToken) {
+        router.replace(`/invalid?token=${storedToken}`);
+      } else {
+        router.replace("/invalid");
+      }
     }
   }, [otpSent, router]);
 
@@ -23,21 +29,17 @@ export default function VerifyPage() {
   }, []);
 
   const handleChange = (index, value) => {
-    if (!/^\d*$/.test(value)) return; // only numbers
+    if (!/^\d*$/.test(value)) return;
     clearError();
-
     const newOtp = [...otp];
-    newOtp[index] = value.slice(-1); // only 1 digit
+    newOtp[index] = value.slice(-1);
     setOtp(newOtp);
-
-    // Auto move to next input
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
   };
 
   const handleKeyDown = (index, e) => {
-    // Move back on backspace
     if (e.key === "Backspace" && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
@@ -47,11 +49,8 @@ export default function VerifyPage() {
     e.preventDefault();
     const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
     const newOtp = [...otp];
-    pasted.split("").forEach((char, i) => {
-      newOtp[i] = char;
-    });
+    pasted.split("").forEach((char, i) => { newOtp[i] = char; });
     setOtp(newOtp);
-    // Focus last filled input
     const lastIndex = Math.min(pasted.length, 5);
     inputRefs.current[lastIndex]?.focus();
   };
@@ -62,9 +61,9 @@ export default function VerifyPage() {
     clearError();
     try {
       await verifyOTP(otpString);
+      sessionStorage.removeItem("apie_token");
       router.push("/report/view");
     } catch (err) {
-      // error already set in context
       setOtp(["", "", "", "", "", ""]);
       inputRefs.current[0]?.focus();
     }
@@ -76,7 +75,6 @@ export default function VerifyPage() {
     <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-gray-900 rounded-2xl p-8 shadow-xl border border-gray-800">
 
-        {/* Header */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mb-4">
             <span className="text-3xl">🔐</span>
@@ -92,7 +90,6 @@ export default function VerifyPage() {
           )}
         </div>
 
-        {/* OTP Inputs */}
         <div className="flex gap-3 justify-center mb-6" onPaste={handlePaste}>
           {otp.map((digit, index) => (
             <input
@@ -112,14 +109,12 @@ export default function VerifyPage() {
           ))}
         </div>
 
-        {/* Error */}
         {error && (
           <div className="bg-red-900/30 border border-red-700/50 rounded-xl p-3 mb-6">
             <p className="text-red-400 text-sm text-center">{error}</p>
           </div>
         )}
 
-        {/* Verify Button */}
         <button
           onClick={handleVerify}
           disabled={loading || !isComplete}
@@ -131,22 +126,16 @@ export default function VerifyPage() {
               Verifying...
             </>
           ) : (
-            <>
-              ✅ Verify OTP
-            </>
+            <>✅ Verify OTP</>
           )}
         </button>
 
-        {/* OTP Expiry Note */}
         <p className="text-gray-600 text-xs text-center mt-4">
           OTP expires in 10 minutes. Do not share it with anyone.
         </p>
-
-        {/* Footer */}
         <p className="text-gray-600 text-xs text-center mt-4">
           Powered by APIE — Autonomous Patient Insight Engine
         </p>
-
       </div>
     </div>
   );
